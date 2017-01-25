@@ -1,0 +1,113 @@
+# **Iris dataset analysis using CARET**
+
+*Author : Shikhar Omar*  
+*Date   : 20th jan 2017*
+
+## Loading the dataset
+
+```{r}
+data("iris")
+dataset <- iris
+```
+## Loading required package
+
+```{r message=FALSE}
+library("caret")
+```
+
+## Dividng dataset for training and validation
+
+```{r message=FALSE}
+validation_index <- createDataPartition(dataset$Species, p = 0.8, list = F)
+validation_set <- dataset[-validation_index, ]
+dataset <- dataset[validation_index, ]
+```
+
+## A look at the data along with its summary
+```{r}
+head(dataset)
+summary(dataset)
+```
+## Classes in the dataset
+```{r}
+levels(dataset$Species)
+```
+
+## Distribution of Classes
+```{r}
+percen <- prop.table(table(dataset$Species)) * 100
+cbind(frequency = table(dataset$Species), percentage = percen)
+```
+## Dataset visualization
+```{r}
+# dividing dataset into input and output
+input <- dataset[, 1:4]
+output <- dataset[, 5]
+
+# visualizing each feature against output
+ par(mfrow = c(1, 4))
+ for(i in 1:4){
+   boxplot(input[, i], main = names(dataset)[i])
+ }
+ 
+ featurePlot(input, output, plot = "box")
+ 
+ # density plot of each feature against output
+ scales <- list(x = list(relation = "free"), y = list(relation = "free"))
+ featurePlot(input, output, plot = "density", scales = scales)
+```
+## Testing different models
+
+```{r message = F}
+# 10-fold crossvalidation
+tcontrol <- trainControl(method = "cv", number = 10)
+metric <- "Accuracy"
+
+# building different models
+
+#LDA
+set.seed(10)
+fit.lda <- train(Species~., data=dataset, method="lda", metric=metric, trControl=tcontrol)
+
+#CART
+set.seed(10)
+fit.cart <- train(Species~., data=dataset, method="rpart", metric=metric, trControl=tcontrol)
+
+# kNN
+set.seed(10)
+fit.knn <- train(Species~., data=dataset, method="knn", metric=metric, trControl=tcontrol)
+
+# SVM
+set.seed(10)
+fit.svm <- train(Species~., data=dataset, method="svmRadial", metric=metric, trControl=tcontrol)
+
+# Random Forest
+set.seed(10)
+fit.rf <- train(Species~., data=dataset, method="rf", metric=metric, trControl=tcontrol)
+```
+
+## Evaluating the models
+```{r}
+result <- resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn, svm=fit.svm, rf=fit.rf))
+summary(result)
+
+# printing out the best model
+print(fit.lda)
+```
+
+## Predictions
+```{r}
+prediction <- predict(fit.lda, validation_set)
+confusionMatrix(prediction, validation_set$Species)
+```
+
+
+
+
+
+
+
+
+ 
+ 
+
